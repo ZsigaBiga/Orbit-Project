@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <ctime>
 
-#define CAMERA_IMPLEMENTATION
+#define CAMERA_IMPLEMENTATION //Custom camera control
 
 #define RLIGHTS_IMPLEMENTATION
 #include "rLights.h"
@@ -26,7 +26,7 @@ float GetRandomValueF(float min, float max) {
 	return min + static_cast <unsigned> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
 }
 
-//Generate random color - alpha 255
+//Generate random color - alpha 255 -- non-transparent
 Color GetRandomColor() {
 	return CLITERAL(Color){ (unsigned char)GetRandomValue(0, 255), (unsigned char)GetRandomValue(0, 255), (unsigned char)GetRandomValue(0, 255), 255 };
 }
@@ -45,14 +45,14 @@ Color GetRandomColor(int alphaMin, float alphaMax) {
 
 std::vector<Body> bodies;
 
-void StartVel(int largest) {
+void StartVel(int largest) { //Give every generated body a velocity that sets them on a circular orbit, in relation to the largest body (sun)
 	for (size_t i = 0; i < bodies.size(); i++)
 	{
 		bodies[i].Start(largest, bodies);
 	}
 }
 
-void SelectedBodyChanged(Window* inWin) {
+void SelectedBodyChanged(Window* inWin) { //Reset info window on new selection
 	inWin->curWidth = 20.0f;
 	inWin->curHeight = 0.0f;
 	inWin->isReady = false;
@@ -70,22 +70,16 @@ void UpdateCameraPos(Camera &cam, Vector2 &angle) {
 	angle.x += -mousePositionDelta.x * 0.003f;
 	angle.y += -mousePositionDelta.y * 0.003f;
 
-	//Kamera fekete-mágia hogy ne szaltózgasson
+	//Avoiding camera "somersaults"
 	float maxAngleUp = Vector3Angle(cam.up, cam.target);
 	maxAngleUp -= 0.001f; // avoid numerical errors
 	if (angle.y > maxAngleUp) angle.y = maxAngleUp;
 
-	// Clamp view down
 	float maxAngleDown = Vector3Angle(Vector3Negate(cam.up), cam.target);
 	maxAngleDown *= -1.0f; // downwards angle is negative
 	maxAngleDown += 0.001f; // avoid numerical errors
 	if (angle.y < maxAngleDown) angle.y = maxAngleDown;
 
-
-	//std::cout << TextFormat("X: %f, Y: %f", angle.x, angle.y);
-
-	/*CameraYaw(&cam, -mousePositionDelta.x * CAMERA_MOUSE_MOVE_SENSITIVITY, true);
-	CameraPitch(&cam, -mousePositionDelta.y * CAMERA_MOUSE_MOVE_SENSITIVITY, true, true, false);*/
 
 	if (IsMouseButtonReleased(MOUSE_BUTTON_MIDDLE))
 	{
@@ -108,6 +102,7 @@ int main(void) {
 	srand(static_cast <unsigned> (time(0))); //Set seed
 	SetRandomSeed(static_cast <unsigned> (time(0)));
 
+	//Initial camera values
 	Camera3D cam = *new Camera3D();
 	cam.position = Vector3{ 40.0f, 40.0f, 40.0f };
 	cam.target = Vector3{ 40.0f, 40.0f, 0.0f };
@@ -132,17 +127,19 @@ int main(void) {
 			selCol = GetRandomColor();
 		}
 
-		Body* temp = new Body((int)bodies.size(), mass, mass / 500.0f, *new Vector3{ 0.0f, 0.0f , GetRandomValueF(0.0f, 1000.0f) }, selCol);
+		Body* temp = new Body((int)bodies.size(), mass, mass / 500.0f, *new Vector3{ GetRandomValueF(0.0f, 1000.0f), GetRandomValueF(0.0f, 1000.0f) , GetRandomValueF(0.0f, 1000.0f) }, selCol);
 		bodies.push_back(*temp);
 
 		if (bodies[sunId].mass < bodies[i].mass)
 		{
 			sunId = i;
+
+			bodies[sunId].id = i;
 		}
 
 	}
 
-	Body* temp = new Body((int)bodies.size(), 4000.0f, 4000.0f / 500.0f, *new Vector3{ 0.0f, GetRandomValueF(0.0f, 1000.0f), 0.0f }, PURPLE);
+	Body* temp = new Body((int)bodies.size(), 5972.0f, 6437.0f, *new Vector3{ 0.0f, GetRandomValueF(0.0f, 400.0f), 30.0f }, SKYBLUE);
 	bodies.push_back(*temp);
 
 	//Configure the body with the biggest mass to be the center of the simulation and also the "sun" of it
@@ -157,7 +154,7 @@ int main(void) {
 
 	int ambientLoc = GetShaderLocation(light, "ambient");
 	SetShaderValue(light, ambientLoc, new float[4] { 0.1f, 0.1f, 0.1f, 0.1f }, SHADER_UNIFORM_IVEC4);
-
+	
 	for (size_t i = 0; i < bodies.size(); i++)
 	{
 		if (i != sunId)
@@ -165,6 +162,7 @@ int main(void) {
 			bodies[i].body.materials[0].shader = light;
 		}
 	}
+	
 
 	Light stars[4] = { 0 };
 	stars[0] = CreateLight(LIGHT_POINT, bodies[sunId].position, Vector3Zero(), bodies[sunId].bodCol, light);
@@ -210,71 +208,17 @@ int main(void) {
 			SelectedBodyChanged(&bodyInfo);
 		}
 
-		if (IsKeyPressed(KEY_F1)) {
-			selectedBody = &bodies[290 - KEY_F1];
-			SelectedBodyChanged(&bodyInfo);
-		}
-
 		int key = GetKeyPressed();
 
-		if (key == 70 || key >=290 && key <= 300)
+		if (key >=290 && key <= 300) //Check if in range of function keys (F1 - F12)
 		{
 			selectedBody = &bodies[abs(290 - key)];
 			SelectedBodyChanged(&bodyInfo);
 		}
 
-		/*if (IsKeyPressed(KEY_F2)) {
-			
-		}
-
-		if (IsKeyPressed(KEY_F3)) {
-			selectedBody = &bodies[abs(290 - KEY_F3)];
-			SelectedBodyChanged(&bodyInfo);
-		}
-
-		if (IsKeyPressed(KEY_F4)) {
-			selectedBody = &bodies[abs(290 - KEY_F4)];
-			SelectedBodyChanged(&bodyInfo);
-		}
-
-		if (IsKeyPressed(KEY_F5)) {
-			selectedBody = &bodies[abs(290 - KEY_F5)];
-			SelectedBodyChanged(&bodyInfo);
-		}
-
-		if (IsKeyPressed(KEY_F6)) {
-			selectedBody = &bodies[abs(290 - KEY_F6)];
-			SelectedBodyChanged(&bodyInfo);
-		}
-
-		if (IsKeyPressed(KEY_F7)) {
-			selectedBody = &bodies[abs(290 - KEY_F7)];
-			SelectedBodyChanged(&bodyInfo);
-		}
-
-		if (IsKeyPressed(KEY_F8)) {
-			selectedBody = &bodies[abs(290 - KEY_F8)];
-			SelectedBodyChanged(&bodyInfo);
-		}
-
-		if (IsKeyPressed(KEY_F9)) {
-			selectedBody = &bodies[abs(290 - KEY_F9)];
-			SelectedBodyChanged(&bodyInfo);
-		}
-
-		if (IsKeyPressed(KEY_F10)) {
-			selectedBody = &bodies[abs(290 - KEY_F10)];
-			SelectedBodyChanged(&bodyInfo);
-		}
-
-		if (IsKeyPressed(KEY_F11)) {
-			selectedBody = &bodies[abs(290 - KEY_F11)];
-			SelectedBodyChanged(&bodyInfo);
-		}*/
-
 #pragma endregion
 
-		//Mihez képest csillogjanak a felszínek
+		//Where to calculate the shine of the surfaces from
 		float cameraPos[3] = { cam.position.x, cam.position.y, cam.position.z };
 		SetShaderValue(light, light.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
 
@@ -286,20 +230,24 @@ int main(void) {
 		for (size_t i = 0; i < vecSize; i++)
 		{
 			passFrame = pause ? 0.0f : GetFrameTime() * speed;
+			
+			if (bodies[sunId].mass < bodies[i].mass && i != sunId)
+			{
+				sunId = i;
+				bodies[i].largestId = sunId;
+			}
+
 			bodies[i].UpdateVelocity(passFrame, bodies);
 			vecSize = bodies.size();
-		}
 
+		}
 
 		for (size_t i = 0; i < vecSize; i++)
 		{
+
 			passFrame = pause ? 0.0f : GetFrameTime() * speed;
 			bodies[i].UpdatePosition(passFrame);
 			
-			if (bodies[sunId].mass < bodies[i].mass)
-			{
-				sunId = i;
-			}
 
 			DrawModel(bodies[i].body, bodies[i].position, 1.0f, WHITE);
 			//DrawSphere(bodies[i].position, bodies[i].radius * 1.05f, ColorAlpha(BLUE, 0.2f));
@@ -373,7 +321,7 @@ int main(void) {
 			DrawRectangleV(bodyInfo.position, Vector2{ bodyInfo.curWidth, bodyInfo.curHeight }, ColorAlpha(DARKGRAY, 0.8f));
 			if (bodyInfo.isReady)
 			{
-				DrawTextEx(GetFontDefault(), TextFormat("Force: %f N/kg\nMass: %f\nRadius: %f\nCurrent position:\n%f,%f,%f",Vector3Length(selectedBody->forceOut), selectedBody->mass, selectedBody->radius, selectedBody->position.x, selectedBody->position.y, selectedBody->position.z), Vector2{ bodyInfo.position.x + 5.0f, bodyInfo.position.y + 5.0f }, 15, 1.5f, WHITE);
+				DrawTextEx(GetFontDefault(), TextFormat("Force: %f N/kg\nMass: %fkg\nRadius: %fkm\nCurrent position:\n%f,%f,%f",Vector3Length(selectedBody->forceOut), selectedBody->mass, selectedBody->radius, selectedBody->position.x, selectedBody->position.y, selectedBody->position.z), Vector2{ bodyInfo.position.x + 5.0f, bodyInfo.position.y + 5.0f }, 15, 1.5f, WHITE);
 			}
 
 			cam.target = selectedBody->position;

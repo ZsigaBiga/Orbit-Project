@@ -3,6 +3,7 @@
 class Body {
 public:
 	int id;
+	int largestId = 0;
 	float mass;
 	float radius;
 	Vector3 initialVelocity = Vector3Zero();
@@ -16,6 +17,7 @@ public:
 		for (size_t i = 0; i < bodies.size(); i++) {
 			if (bodies[i] != *this)
 			{
+				//F = sqrt(G*M*m1 / r^2) -- Force equals the square root of gravitational constant times body1 mass times body2 mass divided by their distance squared
 
 				float sqrDst = Vector3DistanceSqr(bodies[i].position, position);
 				Vector3 forceDir = Vector3Normalize(Vector3Subtract(bodies[i].position, position));
@@ -31,8 +33,9 @@ public:
 				/*float pitchAng = asinf(-currentVelocity.y);
 				float yawAng = atan2f(currentVelocity.x, currentVelocity.z);
 				float rollAng = atan2f(currentVelocity.x, currentVelocity.y);
-				*/
-				body.transform = MatrixRotateXYZ(Vector3 {0.0f});
+				*/ //Spaceship facing
+
+				//body.transform = MatrixRotateXYZ(Vector3{ 0.0f });
 				//std::cout << TextFormat("Velocity Vector: %f, %f, %f", currentVelocity.x, currentVelocity.y, currentVelocity.z);
 				//std::cout << TextFormat("Other obj position: %f, %f, %f", allBodies[i].position.x, allBodies[i].position.y, allBodies[i].position.z);
 
@@ -105,28 +108,6 @@ public:
 
 	}
 
-	/*Body(int inid, float m, float rad, Vector3 initVel, Vector3 pos, Color colin) {
-		id = inid;
-		initialVelocity = initVel;
-		mass = m;
-		radius = rad;
-		position = pos;
-		currentVelocity = initialVelocity;
-		bodCol = colin;
-
-		Mesh tempMesh = GenMeshSphere(radius, 32, 32);
-		body = LoadModelFromMesh(tempMesh);
-		//UnloadMesh(tempMesh);
-
-		//Image plain = GenImageChecked(2, 2, 1, 1, bodCol, BLANK);
-		Image plain = GenImageColor(2, 2, bodCol);
-		Texture2D bodTex = LoadTextureFromImage(plain);
-		UnloadImage(plain);
-
-		body.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = bodTex;
-	}*/
-
-
 	void Start(int largest, std::vector<Body>& bodies) {
 
 		largestId = largest;
@@ -134,7 +115,7 @@ public:
 		if (id != largestId)
 		{
 			float orbitRad = Vector3Distance(position, bodies[largestId].position);
-			initialVelocity = Vector3{ sqrtf((G * bodies[largestId].mass) * orbitRad),  0.0f , 0.0f };
+			initialVelocity = Vector3{ 0.0f, 0.0f,  sqrtf((G * bodies[largestId].mass) * orbitRad) };
 
 			currentVelocity = initialVelocity;
 		}
@@ -172,19 +153,16 @@ public:
 		Image occl = GenImageCellular(32, 32, 2);
 		//Texture2D bodTex = LoadTextureFromImage(plain);
 		Texture2D occTex = LoadTextureFromImage(occl);
-		//UnloadImage(plain);
 		UnloadImage(occl);
 
 		//body.materials[0].maps[MATERIAL_MAP_METALNESS].texture = bodTex;
 		body.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = occTex;
 		body.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = bodCol;
 
-		//UnloadTexture(bodTex);
 	}
 
 private:
 	Vector3 currentVelocity = Vector3Zero();
 	int step = 0;
-	int largestId = 0;
 	//bool operator != (const Body& d) const;
 };
