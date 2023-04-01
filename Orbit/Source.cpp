@@ -22,13 +22,17 @@ struct Window {
 	bool isReady = false;
 };
 
+const int windowW = 1920;
+const int windowH = 1080;
+
+
 float GetRandomValueF(float min, float max) {
 	return min + static_cast <unsigned> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
 }
 
 //Generate random color - alpha 255 -- non-transparent
 Color GetRandomColor() {
-	return CLITERAL(Color){ (unsigned char)GetRandomValue(0, 255), (unsigned char)GetRandomValue(0, 255), (unsigned char)GetRandomValue(0, 255), 255 };
+	return CLITERAL(Color) { (unsigned char)GetRandomValue(0, 255), (unsigned char)GetRandomValue(0, 255), (unsigned char)GetRandomValue(0, 255), 255 };
 }
 
 //Generate random color - with given alpha range
@@ -58,7 +62,7 @@ void SelectedBodyChanged(Window* inWin) { //Reset info window on new selection
 	inWin->isReady = false;
 }
 
-void UpdateCameraPos(Camera &cam, Vector2 &angle) {
+void UpdateCameraPos(Camera& cam, Vector2& angle) {
 	Vector2 mousePositionDelta = Vector2Zero();
 
 	if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE))
@@ -87,17 +91,28 @@ void UpdateCameraPos(Camera &cam, Vector2 &angle) {
 	}
 }
 
+void Menu() {
+	
+	BeginDrawing();
+	ClearBackground(BLACK);
+
+	for (size_t i = 0; i < 4; i++)
+	{
+		DrawRectangle(windowW / 2 - 140, 100 + i * 80, 280, 30, DARKGRAY);
+
+		DrawTextEx(GetFontDefault(), "Start", Vector2{ windowW / 2.0f - (6.0f * 6.0f / 2.0f), 107.0f + i * 80.0f }, 16, 2, WHITE);
+	}
+
+	//DrawLine(windowW / 2, 0, windowW / 2, windowH, RED);
+	EndDrawing();
+}
+
 int main(void) {
-
-	const int windowW = 1920;
-	const int windowH = 1080;
-
 	InitWindow(windowW, windowH, "Orbit");
 	SetTargetFPS(60);
 	SetConfigFlags(FLAG_VSYNC_HINT);
 	SetConfigFlags(FLAG_MSAA_4X_HINT);
 	//ToggleFullscreen();
-
 
 	srand(static_cast <unsigned> (time(0))); //Set seed
 	SetRandomSeed(static_cast <unsigned> (time(0)));
@@ -127,7 +142,7 @@ int main(void) {
 			selCol = GetRandomColor();
 		}
 
-		Body* temp = new Body((int)bodies.size(), mass, mass / 500.0f, *new Vector3{ GetRandomValueF(0.0f, 1000.0f), GetRandomValueF(0.0f, 1000.0f) , GetRandomValueF(0.0f, 1000.0f) }, selCol);
+		Body* temp = new Body((int)bodies.size(), mass, mass / 500.0f, *new Vector3{ GetRandomValueF(0.0f, 1000.0f), GetRandomValueF(0.0f, 1000.0f) , 0.0f }, selCol);
 		bodies.push_back(*temp);
 
 		if (bodies[sunId].mass < bodies[i].mass)
@@ -183,10 +198,10 @@ int main(void) {
 	bodyInfo.curWidth = 20.0f;
 
 	float targetDistance = Vector3Distance(cam.target, cam.position);
+	bool inMenu = true;
 
 	while (!WindowShouldClose())
 	{
-		UpdateCameraPro(&cam, Vector3Zero(), Vector3Zero(), 0.0f);
 #pragma region KeyEvents
 
 		if (IsKeyPressed(KEY_SPACE))
@@ -222,10 +237,22 @@ int main(void) {
 		float cameraPos[3] = { cam.position.x, cam.position.y, cam.position.z };
 		SetShaderValue(light, light.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
 
+		while (inMenu)
+		{
+			Menu();
+
+			if (IsKeyPressed(KEY_ENTER) || WindowShouldClose())
+			{
+				inMenu = false;
+			}
+		}
+
 		//Draw
 		BeginDrawing();
 		ClearBackground(BLACK);
 		BeginMode3D(cam);
+
+		UpdateCameraPos(cam, angle);
 
 		for (size_t i = 0; i < vecSize; i++)
 		{
@@ -314,8 +341,6 @@ int main(void) {
 
 		EndMode3D();
 
-		UpdateCameraPos(cam, angle);
-
 		if (selectedBody != 0)
 		{
 			DrawRectangleV(bodyInfo.position, Vector2{ bodyInfo.curWidth, bodyInfo.curHeight }, ColorAlpha(DARKGRAY, 0.8f));
@@ -347,3 +372,4 @@ int main(void) {
 	CloseWindow();
 	return 0;
 }
+
