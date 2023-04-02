@@ -25,9 +25,9 @@ public:
 				force = Vector3Add(force, Vector3Scale(force, bodies[i].mass));
 				force = Vector3Add(force, Vector3Scale(force, mass));
 				force = Vector3Add(force, Vector3Scale(force, (1.0f / sqrDst)));
-				forceOut = force;
 				Vector3 acceleration = Vector3Scale(force, (1.0f / mass));
 
+				forceOut = currentVelocity;
 				currentVelocity = Vector3Add(currentVelocity, Vector3Scale(acceleration, timestep));
 
 				/*float pitchAng = asinf(-currentVelocity.y);
