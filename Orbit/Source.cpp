@@ -70,17 +70,16 @@ void UpdateCameraPos(Camera& cam, Vector2& angle) {
 
     angle.x += -mousePositionDelta.x * 0.003f;
     angle.y += -mousePositionDelta.y * 0.003f;
-
+    
     //Avoiding camera "somersaults"
-    float maxAngleUp = Vector3Angle(cam.up, cam.target);
+    float maxAngleUp = Vector3Angle(GetCameraUp(&cam), cam.target);
     maxAngleUp -= 0.001f; // avoid numerical errors
     if (angle.y > maxAngleUp) angle.y = maxAngleUp;
 
-    float maxAngleDown = Vector3Angle(Vector3Negate(cam.up), cam.target);
+    float maxAngleDown = Vector3Angle(Vector3Negate(GetCameraUp(&cam)), cam.target);
     maxAngleDown *= -1.0f; // downwards angle is negative
     maxAngleDown += 0.001f; // avoid numerical errors
     if (angle.y < maxAngleDown) angle.y = maxAngleDown;
-
 
     if (IsMouseButtonReleased(MOUSE_BUTTON_MIDDLE))
     {
@@ -183,15 +182,15 @@ int main(void) {
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     SetExitKey(KEY_DELETE);
-    ToggleFullscreen();
+    //ToggleFullscreen();
 
     srand(static_cast <unsigned> (time(0))); //Set seed
     SetRandomSeed(static_cast <unsigned> (time(0)));
 
     //Initial camera values
     Camera3D cam = *new Camera3D();
-    cam.position = Vector3{ 100.0f, 100.0f, 100.0f };
-    cam.target = Vector3{ 40.0f, 40.0f, 0.0f };
+    cam.position = Vector3{ 0.0f, 0.0f, 0.0f };
+    cam.target = Vector3{ 0.0f, 0.0f, 0.0f };
     cam.up = Vector3{ 0.0f, 1.0f, 0.0f };
     cam.fovy = 70.0f;
     cam.projection = CAMERA_PERSPECTIVE;
@@ -229,7 +228,7 @@ int main(void) {
 
     if (retVal == 1)
     {
-        for (size_t i = 0; i < 12; i++)
+        for (size_t i = 0; i < 13; i++)
         {
             float mass = GetRandomValueF(50.0f, 10000.0f);
             Color selCol = { 0 };
@@ -325,7 +324,6 @@ int main(void) {
 
     size_t vecSize = bodies.size();
     StartVel(sunId);
-
     while (!WindowShouldClose())
     {
 
@@ -380,16 +378,25 @@ int main(void) {
         {
             passFrame = pause ? 0.0f : GetFrameTime() * speed;
             
-            if (bodies[sunId].mass < bodies[i].mass && i != sunId)
-            {
-                sunId = i;
-                bodies[i].largestId = sunId;
-            }
-
             bodies[i].UpdateVelocity(passFrame, bodies);
-            vecSize = bodies.size();
+        
+            if (vecSize != bodies.size())
+            {
+                vecSize = bodies.size();
+                sunId = 0;
 
+                for (size_t i = 1; i < vecSize; i++)
+                {
+                    if (bodies[sunId].mass < bodies[i].mass && i != sunId)
+                    {
+                        sunId = i;
+                        bodies[i].largestId = sunId;
+                    }
+                }
+            }
         }
+
+        
 
         for (size_t i = 0; i < vecSize; i++)
         {
@@ -409,7 +416,6 @@ int main(void) {
                 if (selVec.hit)
                 {
                     selectedBody = &bodies[i];
-
                     SelectedBodyChanged(&bodyInfo);
                 }
             }
@@ -473,6 +479,11 @@ int main(void) {
 
             cam.target = selectedBody->position;
 
+
+            if (IsKeyPressed(KEY_X))
+            {
+                bodies.erase(bodies.begin() + sunId);
+            }
             //std::cout << TextFormat("{%f, %f, %f}", Vector3Add(cam.target, Vector3Scale(GetCameraForward(&cam), -1.0f * Vector3Distance(cam.target, cam.position))).x, Vector3Add(cam.target, Vector3Scale(GetCameraForward(&cam), -1.0f * Vector3Distance(cam.target, cam.position))).y, Vector3Add(cam.target, Vector3Scale(GetCameraForward(&cam), -1.0f * Vector3Distance(cam.target, cam.position))).z);
 
         }
@@ -482,8 +493,19 @@ int main(void) {
         cam.position.y = -sinf(angle.y) * targetDistance + cam.target.y;
         cam.position.z = -cosf(angle.x) * targetDistance * cosf(angle.y) + cam.target.z;
 
-        CameraMoveToTarget(&cam, -GetMouseWheelMove() * 10.0f);
         targetDistance += -GetMouseWheelMove() * 10.0f;
+
+        if (selectedBody != 0)
+        {
+            if (targetDistance < selectedBody->radius) targetDistance = selectedBody->radius + 5.0f;
+        }
+        else
+        {
+            if (targetDistance < 10.0f) targetDistance = 11.0f;
+        }
+
+        if (targetDistance > 10000.0f) targetDistance = 9999.0f;
+        
         
         DrawFPS(10, 20);
         DrawText(TextFormat("Simulation speed: %fx", speed), windowW -  22 * GetFontDefault().baseSize, 30, 16, WHITE);
