@@ -56,7 +56,7 @@
 *   #define RL_MAX_MATRIX_STACK_SIZE             32    // Maximum size of internal Matrix stack
 *   #define RL_MAX_SHADER_LOCATIONS              32    // Maximum number of shader locations supported
 *   #define RL_CULL_DISTANCE_NEAR              0.01    // Default projection matrix near cull distance
-*   #define RL_CULL_DISTANCE_FAR             1000.0    // Default projection matrix far cull distance
+*   #define RL_CULL_DISTANCE_FAR            10000.0    // Default projection matrix far cull distance
 *
 *   When loading a shader, the following vertex attribute and uniform
 *   location names are tried to be set automatically:

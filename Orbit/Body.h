@@ -1,5 +1,9 @@
 #pragma once
 
+float GetRandomValueF(float min, float max) {
+	return min + static_cast <unsigned> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
+}
+
 class Body {
 public:
 	int id;
@@ -115,7 +119,7 @@ public:
 		if (id != largestId)
 		{
 			float orbitRad = Vector3Distance(position, bodies[largestId].position);
-			initialVelocity = Vector3{ 0.0f, 0.0f,  sqrtf((G * bodies[largestId].mass) * orbitRad) };
+			initialVelocity = Vector3{ 0.0f, 0.0f,  sqrtf((G * bodies[largestId].mass) * orbitRad) * GetRandomValueF(0.65f, 1.0f)};
 
 			currentVelocity = initialVelocity;
 		}
@@ -150,7 +154,7 @@ public:
 		}
 
 		//Image plain = GenImageColor(32, 32, bodCol);
-		Image occl = GenImageCellular(32, 32, 2);
+		Image occl = GenImagePerlinNoise(32, 32, 0, 0, 1.0f);
 		//Texture2D bodTex = LoadTextureFromImage(plain);
 		Texture2D occTex = LoadTextureFromImage(occl);
 		UnloadImage(occl);

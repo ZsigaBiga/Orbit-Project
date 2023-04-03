@@ -22,13 +22,10 @@ struct Window {
     bool isReady = false;
 };
 
-const int windowW = 1380;
-const int windowH = 830;
+const int windowW = 1920;
+const int windowH = 1080;
 
 
-float GetRandomValueF(float min, float max) {
-    return min + static_cast <unsigned> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
-}
 
 //Generate random color - alpha 255 -- non-transparent
 Color GetRandomColor() {
@@ -104,24 +101,26 @@ public:
     
         Vector2 mousePos = { 0 };
 
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-        {
-            mousePos = GetMousePosition();
-        }
-
         BeginDrawing();
         ClearBackground(BLACK);
 
+        mousePos = GetMousePosition();
+        DrawCircleV(mousePos, 3.0f, RED);
         for (size_t i = 0; i < 4; i++)
         {
-            if (CheckCollisionPointRec(mousePos, buttons[i].butRec))
-            {
-                eventNum = buttons[i].event;
-            }
-
             DrawRectanglePro(buttons[i].butRec, Vector2Zero(), 0.0f, DARKGRAY);
             Vector2 textWidth = MeasureTextEx(GetFontDefault(), buttons[i].text, 20, 2);
+            if (CheckCollisionPointRec(mousePos, buttons[i].butRec))
+            {
+                DrawRectangleLinesEx(buttons[i].butRec, 1.0f, RAYWHITE);
+
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                {
+                    eventNum = buttons[i].event;
+                }
+            }
             DrawTextEx(GetFontDefault(), buttons[i].text, Vector2{(windowW / 2.0f - (textWidth.x / 2.0f)), buttons[i].butRec.y + buttons[i].butRec.height / 4.0f}, 20, 2, WHITE);
+            
         }
 
         //DrawLineEx(Vector2{ windowW / 2.0f, 0.0f }, Vector2{ windowW / 2.0f, windowH }, 1.0f, RED);
@@ -172,25 +171,32 @@ private:
     Button buttons[4] = {0};
 };
 
+/*class OptionsScreen : MenuScreen {
+    void MenuScreen() {
+
+    }
+};*/
+
 int main(void) {
     InitWindow(windowW, windowH, "Orbit");
     SetTargetFPS(60);
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetConfigFlags(FLAG_MSAA_4X_HINT);
-    //ToggleFullscreen();
+    SetExitKey(KEY_DELETE);
+    ToggleFullscreen();
 
     srand(static_cast <unsigned> (time(0))); //Set seed
     SetRandomSeed(static_cast <unsigned> (time(0)));
 
     //Initial camera values
     Camera3D cam = *new Camera3D();
-    cam.position = Vector3{ 40.0f, 40.0f, 40.0f };
+    cam.position = Vector3{ 100.0f, 100.0f, 100.0f };
     cam.target = Vector3{ 40.0f, 40.0f, 0.0f };
     cam.up = Vector3{ 0.0f, 1.0f, 0.0f };
     cam.fovy = 70.0f;
     cam.projection = CAMERA_PERSPECTIVE;
     Vector2 angle = Vector2Zero();
-
+   
     bool pause = true;
     float passFrame = GetFrameTime();
     float speed = 1.0f;
@@ -236,8 +242,9 @@ int main(void) {
             {
                 selCol = GetRandomColor();
             }
+            float xPos = GetRandomValueF(0.0f, 1000.0f);
 
-            Body* temp = new Body((int)bodies.size(), mass, mass / 500.0f, *new Vector3{ GetRandomValueF(0.0f, 1000.0f), GetRandomValueF(0.0f, 1000.0f) , 0.0f }, selCol);
+            Body* temp = new Body((int)bodies.size(), mass, mass / 500.0f, *new Vector3{xPos, xPos *  tanf(GetRandomValueF(0.0f, 90.0f) * DEG2RAD), 0.0f }, selCol);
             bodies.push_back(*temp);
 
             if (bodies[sunId].mass < bodies[i].mass)
@@ -248,7 +255,7 @@ int main(void) {
             }
 
         }
-
+       
         Body* temp = new Body((int)bodies.size(), 5972.0f, 6437.0f, *new Vector3{ 0.0f, GetRandomValueF(0.0f, 400.0f), 30.0f }, SKYBLUE);
         bodies.push_back(*temp);
 
@@ -262,17 +269,37 @@ int main(void) {
         Body* temp = new Body(0, 1.989f * pow(10, 7), 69.6f, Vector3Zero(), YELLOW);
         bodies.push_back(*temp);
 
-        temp = new Body(1, 3.285f, 2.43f, Vector3{ 580.0f, 580.0f * tanf(7.004f * DEG2RAD), 0.0f}, GRAY);
+        temp = new Body(1, 3.285f, 2.43f, Vector3{ 580.0f / 6.0f, (580.0f * tanf(7.004f * DEG2RAD)) / 6.0f, 0.0f}, GRAY);
         bodies.push_back(*temp);
 
-        temp = new Body(2, 4.867f * 10, 6.05f, Vector3{ 1082.0f, 1082.0f * tanf(3.395f * DEG2RAD), 0.0f}, ORANGE);
+        temp = new Body(2, 4.867f * 10, 6.05f, Vector3{ 1082.0f / 6.0f, (1082.0f * tanf(3.395f * DEG2RAD)) / 6.0f, 0.0f}, ORANGE);
         bodies.push_back(*temp);
 
-        temp = new Body(3, 5.972f * 10, 6.37f, Vector3{ 1495.3f, 1495.3f * tanf(66.5f * DEG2RAD), 0.0f}, BLUE);
+        temp = new Body(3, 5.972f * 10, 6.37f, Vector3{ 1495.3f / 6.0f, (1495.3f * tanf(0.0f * DEG2RAD)) / 6.0f, 0.0f}, BLUE);
         bodies.push_back(*temp);
 
-        bodies[sunId].bodCol = WHITE;
+        temp = new Body(4, 6.39f, 3.389f, Vector3{ 2279.0f / 6.0f, (2279.0f * tanf(1.848f * DEG2RAD)) / 6.0f, 0.0f }, DARKBROWN);
+        bodies.push_back(*temp);
+
+        temp = new Body(5, 1898.13f * 10, 71.5f / 2.0f, Vector3{ 2890.0f / 6.0f , (2890.0f * tanf(1.304f * DEG2RAD)) / 6.0f,0.0f }, BROWN);
+        bodies.push_back(*temp);
+
+        temp = new Body(6, 586.32f * 10, 60.2f / 2.0f, Vector3{ 3123.4f / 6.0f, (3123.4f * tanf(2.486f * DEG2RAD)) / 6.0f, 0.0f }, DARKBROWN);
+        bodies.push_back(*temp);
+
+        temp = new Body(7, 86.81f * 10, 25.5f / 2.0f, Vector3{ 3581.3f / 6.0f, (3581.3f * tanf(0.770f * DEG2RAD)) / 6.0f, 0.0f }, SKYBLUE);
+        bodies.push_back(*temp);
+
+        temp = new Body(8, 102.409f * 10, 24.75f / 2.0f, Vector3{ 3791.5f / 6.0f, (3791.5f * tanf(1.770f * DEG2RAD)) / 6.0f, 0.0f }, DARKBLUE);
+        bodies.push_back(*temp);
+
+        bodies[sunId].bodCol = YELLOW;
         bodies[sunId].body.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = bodies[sunId].bodCol;
+    }
+    else if(retVal == 0)
+    {
+        CloseWindow();
+        return 0;
     }
     
 
@@ -294,12 +321,12 @@ int main(void) {
 
 
     Light stars[4] = { 0 };
-    stars[0] = CreateLight(LIGHT_POINT, bodies[sunId].position, Vector3Zero(), bodies[sunId].bodCol, light);
+    stars[0] = CreateLight(LIGHT_POINT, bodies[sunId].position, Vector3Zero(), Color{ 255, 252, 209 , 255}, light);
 
     size_t vecSize = bodies.size();
     StartVel(sunId);
 
-    while (!WindowShouldClose() && retVal != 0)
+    while (!WindowShouldClose())
     {
 
 #pragma region KeyEvents
@@ -307,6 +334,11 @@ int main(void) {
         if (IsKeyPressed(KEY_SPACE))
         {
             pause = !pause;
+        }
+
+        if (pause)
+        {
+            DrawTextEx(GetFontDefault(), "PAUSED", Vector2{ windowW / 2.0f - MeasureTextEx(GetFontDefault(), "PAUSED", 20, 1.0f).x / 2.0f, 200.0f }, 20, 1.0f, WHITE);
         }
 
         if (IsKeyPressed(KEY_KP_ADD))
@@ -436,7 +468,7 @@ int main(void) {
             DrawRectangleV(bodyInfo.position, Vector2{ bodyInfo.curWidth, bodyInfo.curHeight }, ColorAlpha(DARKGRAY, 0.8f));
             if (bodyInfo.isReady)
             {
-                DrawTextEx(GetFontDefault(), TextFormat("Force: %f m/s\nMass: %fkg\nRadius: %fkm\nCurrent position:\n%f,%f,%f",Vector3Length(selectedBody->forceOut), selectedBody->mass, selectedBody->radius, selectedBody->position.x, selectedBody->position.y, selectedBody->position.z), Vector2{bodyInfo.position.x + 5.0f, bodyInfo.position.y + 5.0f}, 15, 1.5f, WHITE);
+                DrawTextEx(GetFontDefault(), TextFormat("Speed: %f m/s\nMass: %fkg\nRadius: %fkm\nCurrent position:\n%f,%f,%f",Vector3Length(selectedBody->forceOut), selectedBody->mass, selectedBody->radius, selectedBody->position.x, selectedBody->position.y, selectedBody->position.z), Vector2{bodyInfo.position.x + 5.0f, bodyInfo.position.y + 5.0f}, 15, 1.5f, WHITE);
             }
 
             cam.target = selectedBody->position;
