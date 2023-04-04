@@ -34,31 +34,13 @@ public:
 				forceOut = currentVelocity;
 				currentVelocity = Vector3Add(currentVelocity, Vector3Scale(acceleration, timestep));
 
-				/*float pitchAng = asinf(-currentVelocity.y);
-				float yawAng = atan2f(currentVelocity.x, currentVelocity.z);
-				float rollAng = atan2f(currentVelocity.x, currentVelocity.y);
-				*/ //Spaceship facing
-
-				//body.transform = MatrixRotateXYZ(Vector3{ 0.0f });
-				//std::cout << TextFormat("Velocity Vector: %f, %f, %f", currentVelocity.x, currentVelocity.y, currentVelocity.z);
-				//std::cout << TextFormat("Other obj position: %f, %f, %f", allBodies[i].position.x, allBodies[i].position.y, allBodies[i].position.z);
-
-				//std::cout << TextFormat("this id: %d, other id: %d", id, allBodies[i].id);
-
-				//char asd;
-				//std::cin >> asd;
 				if (CheckCollisionSpheres(bodies[i].position, bodies[i].radius, position, radius) && i != id)
 				{
 					if (mass > bodies[i].mass)
 					{
 						DrawSphere(bodies[i].position, bodies[i].radius * 5.0f, YELLOW);
 						bodies.erase(bodies.begin() + i);
-						/*RenderTexture2D impactedTex = LoadRenderTexture(body.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture.width, body.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture.height);
-						BeginTextureMode(impactedTex);
-						DrawCircle((int)Vector3Subtract(position, bodies[i].position).x, (int)Vector3Subtract(position, bodies[i].position).y, radius, ORANGE);
-						EndTextureMode();
-
-						body.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = impactedTex.texture;*/
+						
 					}
 					else
 					{
@@ -69,13 +51,6 @@ public:
 							{
 								bodies.erase(iter);
 								bodies.shrink_to_fit();
-
-								/*RenderTexture2D impactedTex = LoadRenderTexture(body.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture.width, body.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture.height);
-								BeginTextureMode(impactedTex);
-								DrawCircle((int)Vector3Subtract(bodies[i].position, position).x, (int)Vector3Subtract(bodies[i].position, position).y, bodies[i].radius, ORANGE);
-								EndTextureMode();
-
-								bodies[i].body.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = impactedTex.texture;*/
 								break;
 							}
 						}
@@ -112,14 +87,15 @@ public:
 
 	}
 
-	void Start(int largest, std::vector<Body>& bodies) {
+	void Start(int largest, std::vector<Body>& bodies, int procNum) {
 
 		largestId = largest;
 
 		if (id != largestId)
 		{
 			float orbitRad = Vector3Distance(position, bodies[largestId].position);
-			initialVelocity = Vector3{ 0.0f, 0.0f,  sqrtf((G * bodies[largestId].mass) * orbitRad) * GetRandomValueF(0.65f, 1.0f)};
+			float ooblify = procNum == 2 ? 1.0f : GetRandomValueF(0.65f, 1.0f);
+			initialVelocity = Vector3{ 0.0f, 0.0f,  sqrtf((G * bodies[largestId].mass) * orbitRad) * ooblify};
 
 			currentVelocity = initialVelocity;
 		}
@@ -142,7 +118,7 @@ public:
 		currentVelocity = Vector3Zero();
 		bodCol = colin;
 
-		if (id == 4)
+		if (id == 4 && m < 3.38f)
 		{
 			body = LoadModel("spaceship2.obj");
 		}

@@ -22,10 +22,17 @@ struct Window {
     bool isReady = false;
 };
 
-const int windowW = 1920;
-const int windowH = 1080;
+int windowW = 1920; // default
+int windowH = 1080; // default
 
-
+void SetupScreenDimensions() {
+    char* screenSizeText = LoadFileText("screensize.txt");
+    const char* screenWidthText = TextFormat("%c%c%c%c", screenSizeText[0], screenSizeText[1], screenSizeText[2], screenSizeText[3]);
+    const char* screenHeightText = TextFormat("%c%c%c%c", screenSizeText[5], screenSizeText[6], screenSizeText[7], screenSizeText[8]);
+    char* end;
+    windowW = strtol(screenWidthText, &end, 10);
+    windowH = strtol(screenHeightText, &end, 10);
+}
 
 //Generate random color - alpha 255 -- non-transparent
 Color GetRandomColor() {
@@ -46,10 +53,10 @@ Color GetRandomColor(int alphaMin, float alphaMax) {
 
 std::vector<Body> bodies;
 
-void StartVel(int largest) { //Give every generated body a velocity that sets them on a circular orbit, in relation to the largest body (sun)
+void StartVel(int largest, int procNum) { //Give every generated body a velocity that sets them on a circular orbit, in relation to the largest body (sun)
     for (size_t i = 0; i < bodies.size(); i++)
     {
-        bodies[i].Start(largest, bodies);
+        bodies[i].Start(largest, bodies, procNum);
     }
 }
 
@@ -91,7 +98,7 @@ struct Button{
 public:
     const char* text;
     unsigned int event; // 0 - exit, 3 - options, 2 - earth sim, 1 - start random
-    Rectangle butRec = Rectangle{windowW / 2 - 150, windowH / 3, 300, 50};
+    Rectangle butRec = Rectangle{windowW / 2.0f - 150, windowH / 3.0f, 300, 50};
 };
 
 class MenuScreen {
@@ -100,12 +107,16 @@ public:
     
         Vector2 mousePos = { 0 };
 
+        if (IsKeyPressed(KEY_F11)) ToggleFullscreen();
+
         BeginDrawing();
         ClearBackground(BLACK);
 
         mousePos = GetMousePosition();
-        DrawCircleV(mousePos, 3.0f, RED);
-        for (size_t i = 0; i < 4; i++)
+        
+        DrawTextEx(GetFontDefault(), "ORBITAL CHAOS", Vector2{ windowW / 2.0f - MeasureTextEx(GetFontDefault(), "ORBITAL CHAOS", 32, 2.0f).x / 2.0f, 300 }, 32, 2.0f, WHITE);
+
+        for (size_t i = 0; i < 3; i++)
         {
             DrawRectanglePro(buttons[i].butRec, Vector2Zero(), 0.0f, DARKGRAY);
             Vector2 textWidth = MeasureTextEx(GetFontDefault(), buttons[i].text, 20, 2);
@@ -127,7 +138,7 @@ public:
     }
 
     MenuScreen() {
-        for (size_t i = 0; i < 4; i++)
+        for (size_t i = 0; i < 3; i++)
         {
             Button temp = { 0 };
             
@@ -148,13 +159,6 @@ public:
                     break;
 
                 case 2:
-                    temp.text = "Options";
-                    temp.butRec.y += i * 90;
-                    temp.event = 3;
-                    buttons[i] = temp;
-                    break;
-
-                case 3:
                     temp.text = "Exit";
                     temp.butRec.y += i * 90;
                     temp.event = 0;
@@ -170,13 +174,9 @@ private:
     Button buttons[4] = {0};
 };
 
-/*class OptionsScreen : MenuScreen {
-    void MenuScreen() {
+int WinMain(void) {
+    SetupScreenDimensions();
 
-    }
-};*/
-
-int main(void) {
     InitWindow(windowW, windowH, "Orbit");
     SetTargetFPS(60);
     SetConfigFlags(FLAG_VSYNC_HINT);
@@ -271,25 +271,25 @@ int main(void) {
         temp = new Body(1, 3.285f, 2.43f, Vector3{ 580.0f / 6.0f, (580.0f * tanf(7.004f * DEG2RAD)) / 6.0f, 0.0f}, GRAY);
         bodies.push_back(*temp);
 
-        temp = new Body(2, 4.867f * 10, 6.05f, Vector3{ 1082.0f / 6.0f, (1082.0f * tanf(3.395f * DEG2RAD)) / 6.0f, 0.0f}, ORANGE);
+        temp = new Body(2, 4.867f * 10, 6.05f, Vector3{ 1082.0f / 6.0f, (1082.0f * tanf(3.395f * DEG2RAD)) / 6.0f, 0.0f}, GOLD);
         bodies.push_back(*temp);
 
         temp = new Body(3, 5.972f * 10, 6.37f, Vector3{ 1495.3f / 6.0f, (1495.3f * tanf(0.0f * DEG2RAD)) / 6.0f, 0.0f}, BLUE);
         bodies.push_back(*temp);
 
-        temp = new Body(4, 6.39f, 3.389f, Vector3{ 2279.0f / 6.0f, (2279.0f * tanf(1.848f * DEG2RAD)) / 6.0f, 0.0f }, DARKBROWN);
+        temp = new Body(4, 6.39f, 3.389f, Vector3{ 2279.0f / 6.0f, (2279.0f * tanf(1.848f * DEG2RAD)) / 6.0f, 0.0f }, ORANGE);
         bodies.push_back(*temp);
 
         temp = new Body(5, 1898.13f * 10, 71.5f / 2.0f, Vector3{ 2890.0f / 6.0f , (2890.0f * tanf(1.304f * DEG2RAD)) / 6.0f,0.0f }, BROWN);
         bodies.push_back(*temp);
 
-        temp = new Body(6, 586.32f * 10, 60.2f / 2.0f, Vector3{ 3123.4f / 6.0f, (3123.4f * tanf(2.486f * DEG2RAD)) / 6.0f, 0.0f }, DARKBROWN);
+        temp = new Body(6, 586.32f * 10, 60.2f / 2.0f, Vector3{ 3623.4f / 6.0f, (3223.4f * tanf(2.486f * DEG2RAD)) / 6.0f, 0.0f }, DARKBROWN);
         bodies.push_back(*temp);
 
-        temp = new Body(7, 86.81f * 10, 25.5f / 2.0f, Vector3{ 3581.3f / 6.0f, (3581.3f * tanf(0.770f * DEG2RAD)) / 6.0f, 0.0f }, SKYBLUE);
+        temp = new Body(7, 86.81f * 10, 25.5f / 2.0f, Vector3{ 4827.3f / 6.0f, (3981.3f * tanf(0.770f * DEG2RAD)) / 6.0f, 0.0f }, SKYBLUE);
         bodies.push_back(*temp);
 
-        temp = new Body(8, 102.409f * 10, 24.75f / 2.0f, Vector3{ 3791.5f / 6.0f, (3791.5f * tanf(1.770f * DEG2RAD)) / 6.0f, 0.0f }, DARKBLUE);
+        temp = new Body(8, 102.409f * 10, 24.75f / 2.0f, Vector3{ 5160.5f / 6.0f, (4125.5f * tanf(1.770f * DEG2RAD)) / 6.0f, 0.0f }, DARKBLUE);
         bodies.push_back(*temp);
 
         bodies[sunId].bodCol = YELLOW;
@@ -323,11 +323,16 @@ int main(void) {
     stars[0] = CreateLight(LIGHT_POINT, bodies[sunId].position, Vector3Zero(), Color{ 255, 252, 209 , 255}, light);
 
     size_t vecSize = bodies.size();
-    StartVel(sunId);
+    StartVel(sunId, retVal);
     while (!WindowShouldClose())
     {
-
+        
 #pragma region KeyEvents
+
+        if (IsKeyPressed(KEY_F11))
+        {
+            ToggleFullscreen();
+        }
 
         if (IsKeyPressed(KEY_SPACE))
         {
@@ -355,7 +360,7 @@ int main(void) {
 
         int key = GetKeyPressed();
 
-        if (key >=290 && key <= 300) //Check if in range of function keys (F1 - F12)
+        if (key >=290 && key <= 299) //Check if in range of function keys (F1 - F10)
         {
             selectedBody = &bodies[abs(290 - key)];
             SelectedBodyChanged(&bodyInfo);
